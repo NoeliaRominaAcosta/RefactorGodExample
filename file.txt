@@ -1,14 +1,83 @@
-Esta clase God viola los principios SOLID de las siguientes maneras:
+Paso 1: La Orden de Trabajo (El Cliente)
 
-   * Principio de Responsabilidad Única: La clase God se encarga de la autenticación de usuarios, el procesamiento de archivos, las
-     operaciones de la base de datos y el envío de correos electrónicos. Estas son responsabilidades distintas que deberían estar en
-     clases separadas.
-   * Principio de Abierto/Cerrado: El método processFile utiliza una sentencia switch. Si quisiéramos añadir soporte para un nuevo tipo
-      de archivo (por ejemplo, CSV), tendríamos que modificar la clase God añadiendo un nuevo case al switch.
-   * Principio de Sustitución de Liskov: Si creáramos una subclase de God, podría alterar el comportamiento de métodos como login,
-     rompiendo potencialmente la funcionalidad que depende del comportamiento original.
-   * Principio de Segregación de Interfaces: La GodInterface es una interfaz "gorda". Una clase que sólo necesite procesar archivos se
-     vería obligada a implementar todos los demás métodos (login, logout, sendEmail, etc.), que no necesita.
-   * Principio de Inversión de Dependencias: La clase God depende directamente de la clase concreta DatabaseConnection. Debería
-     depender de una abstracción (una interfaz), lo que permitiría cambiar la implementación de la base de datos sin modificar la clase
-      God.
+  Todo comienza cuando una parte de tu aplicación (el "cliente", por ejemplo, el método main) necesita procesar un archivo.
+  El cliente no sabe cómo procesar archivos, solo sabe que tiene la ruta de uno.
+
+   1 // El cliente solo conoce el servicio, nada más.
+   2 FileService fileService = new FileService();
+   3 String resultado = fileService.processFile("C:/documentos/informe.xml");
+
+  El cliente le da la "orden de trabajo" (filePath) al FileService, que es el gerente de la planta.
+
+  Paso 2: El Gerente de Planta (FileService)
+
+  El FileService es el coordinador. No realiza el trabajo pesado, pero se asegura de que se haga correctamente.
+
+   1. Identificar el material: Lo primero que hace es mirar la ruta del archivo ("C:/documentos/informe.xml") y usar su método getFileType() para extraer la extensión. Descubre que el material es "xml".
+   2. Buscar al especialista adecuado: Ahora que sabe que necesita trabajar con "xml", el FileService no busca al trabajador directamente. En su lugar, va al departamento de recursos humanos, que es la
+      FileProcessorFactory. Le pregunta: "Necesito un especialista para 'xml'".
+
+   1 // Dentro de FileService.java
+   2 // ...
+   3 String fileType = getFileType(file.getName()).orElseThrow(...); // Devuelve "xml"
+   4
+   5 FileProcessor processor = FileProcessorFactory.getProcessor(fileType).orElseThrow(...); // Pregunta a la fábrica
+   6 // ...
+
+  Paso 3: Recursos Humanos (FileProcessorFactory)
+
+  La FileProcessorFactory es el cerebro de la operación. Su única función es saber qué especialista (qué FileProcessor) es el adecuado para cada tipo de material (cada fileType).
+
+   1. Consultar el registro: La fábrica tiene un registro (Map) que asocia cada tipo de archivo con un trabajador especialista.
+       * "txt" -> TxtProcessor
+       * "xml" -> XmlProcessor
+       * "json" -> JsonProcessor
+   2. Asignar el especialista: Cuando recibe la petición de un especialista para "xml", busca en su registro y encuentra que el trabajador adecuado es un objeto de la clase XmlProcessor.
+   3. Enviar al especialista: La fábrica devuelve este objeto XmlProcessor al FileService.
+
+   1 // Dentro de FileProcessorFactory.java
+   2 public static Optional<FileProcessor> getProcessor(String fileType) {
+   3     // Busca en el mapa y devuelve el objeto procesador correspondiente.
+   4     return Optional.ofNullable(processorMap.get(fileType.toLowerCase()));
+   5 }
+
+  Paso 4: El Gerente Delega la Tarea (FileService de nuevo)
+
+  El FileService ya tiene al especialista que le entregó la fábrica (el objeto XmlProcessor).
+
+  Lo importante aquí es que el FileService no necesita saber que es un XmlProcessor específicamente. Gracias a la interfaz FileProcessor, solo sabe que es un "procesador de archivos" y que, como todos los
+  procesadores, tiene un botón de "encendido", que es el método process().
+
+  Ahora, simplemente le entrega el archivo al especialista y le dice que haga su trabajo:
+
+   1 // Dentro de FileService.java
+   2 // ...
+   3 return processor.process(file); // Llama al método process() del especialista
+
+  Paso 5: El Especialista en Acción (XmlProcessor)
+
+  Finalmente, se ejecuta el método process() que está dentro de la clase `XmlProcessor`. Esta clase contiene la lógica específica y única para leer y manipular archivos XML. Es el trabajador que realiza la tarea
+  concreta.
+
+   1 // Dentro de XmlProcessor.java
+   2 @Override
+   3 public String process(File file) {
+   4     System.out.println("Procesando archivo XML: " + file.getName());
+   5     // ... Lógica para XML ...
+   6     return "Contenido del XML"; // Devuelve el resultado de su trabajo
+   7 }
+
+  Una vez que termina, devuelve el resultado ("Contenido del XML") al FileService.
+
+  Paso 6: Entrega del Producto Final
+
+  El FileService recibe el resultado del especialista y se lo entrega al cliente original que hizo la petición. El ciclo está completo.
+
+  La Gran Ventaja: Extensibilidad (Principio Abierto/Cerrado)
+
+  Si mañana necesitas procesar archivos CSV, no tienes que modificar ninguna de las clases existentes. Simplemente:
+
+   1. Contratas un nuevo especialista: Creas una nueva clase CsvProcessor.
+   2. Lo registras en RRHH: Añades una línea en la FileProcessorFactory: processorMap.put("csv", new CsvProcessor());.
+
+

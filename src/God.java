@@ -2,7 +2,7 @@
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
+/*
 // Interfaz monolítica que viola el Principio de Segregación de Interfaces
 interface GodInterface {
     boolean login(String username, String password);
@@ -132,3 +132,4 @@ class DatabaseConnection {
         // Simula la ejecución de una sentencia
     }
 }
+*/
