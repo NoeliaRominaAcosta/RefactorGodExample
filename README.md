@@ -89,3 +89,38 @@ Refactorizar la clase “God” en un conjunto de clases **modulares, extensible
 - Libro: *Design Patterns* – Gamma, Helm, Johnson, Vlissides  
 - Documentación oficial de [Java Streams](https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html)  
 - [Guía de principios SOLID en Java](https://www.baeldung.com/solid-principles)
+
+
+## Cambios realizados
+
+### 1. Patrón Strategy
+   Este es el patrón más evidente en el rediseño del procesamiento de archivos.
+* Propósito: Permite definir una familia de algoritmos (estrategias), encapsular cada uno en su propia clase y hacerlos intercambiables.
+* Dónde lo usamos:
+   * La interfaz FileProcessor es el contrato común de la Estrategia.
+   * Las clases TxtFile, XmlFile, JsonFile, y DocFile son las Estrategias Concretas. Cada una implementa el mismo método processFile de una manera diferente.
+   * La clase ProcessFileService actúa como el Contexto que utiliza una de estas estrategias para realizar su trabajo, sin saber los detalles de cuál está usando.
+
+### 2. Patrón Factory (Fábrica)
+   Lo utilizamos para decidir qué estrategia de procesamiento de archivos crear en tiempo de ejecución.
+* Propósito: Encapsula la lógica de creación de objetos. El cliente pide un objeto a la fábrica en lugar de crearlo directamente, lo que desacopla al cliente de las clases concretas.
+* Dónde lo usamos:
+  ### 3. Inyección de Dependencias (Principio y Patrón)
+   Este es un principio clave para lograr la Inversión de Dependencias (la 'D' de SOLID). Lo aplicamos de forma manual.
+* Propósito: Un objeto no debe crear sus propias dependencias, sino que se le deben "inyectar" desde fuera.
+* Dónde lo usamos:
+   * La clase DatabaseRepositoryImpl no crea su propia conexión a la base de datos (no hace new DatabaseConnection()).
+   * En su lugar, recibe una dependencia de tipo DbConnection a través de su constructor: public DatabaseRepositoryImpl(DbConnection dbConnection).
+   * La clase Main actúa como el Inyector, creando todas las dependencias y pasándolas a los objetos que las necesitan.
+
+### 4. Patrón Repository
+   Se utilizó para abstraer la lógica de acceso a datos.
+* Propósito: Mediar entre la lógica de negocio y la capa de acceso a datos, proporcionando una interfaz similar a una colección para consultar y persistir datos.
+* Dónde lo usamos:
+   * La interfaz DatabaseRepository define el contrato del repositorio (getUserData, setUserData).
+### 5. Patrón Facade (Fachada) - Aplicado como Capa de Servicio
+   Cada uno de nuestros servicios (AuthenticationService, EmailService, etc.) actúa como una fachada para su respectiva área de funcionalidad.
+* Propósito: Proporciona una interfaz unificada y simplificada a un subsistema más complejo.
+* Dónde lo usamos:
+   * La clase Main no necesita conocer los detalles internos de cómo se procesa un archivo (estrategias, fábrica, etc.). Simplemente llama a fileService.processFile(). El ProcessFileService actúa como una
+     fachada que simplifica el uso de ese subsistema.
