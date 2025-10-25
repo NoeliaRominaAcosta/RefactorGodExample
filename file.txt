@@ -1,0 +1,14 @@
+Esta clase God viola los principios SOLID de las siguientes maneras:
+
+   * Principio de Responsabilidad Única: La clase God se encarga de la autenticación de usuarios, el procesamiento de archivos, las
+     operaciones de la base de datos y el envío de correos electrónicos. Estas son responsabilidades distintas que deberían estar en
+     clases separadas.
+   * Principio de Abierto/Cerrado: El método processFile utiliza una sentencia switch. Si quisiéramos añadir soporte para un nuevo tipo
+      de archivo (por ejemplo, CSV), tendríamos que modificar la clase God añadiendo un nuevo case al switch.
+   * Principio de Sustitución de Liskov: Si creáramos una subclase de God, podría alterar el comportamiento de métodos como login,
+     rompiendo potencialmente la funcionalidad que depende del comportamiento original.
+   * Principio de Segregación de Interfaces: La GodInterface es una interfaz "gorda". Una clase que sólo necesite procesar archivos se
+     vería obligada a implementar todos los demás métodos (login, logout, sendEmail, etc.), que no necesita.
+   * Principio de Inversión de Dependencias: La clase God depende directamente de la clase concreta DatabaseConnection. Debería
+     depender de una abstracción (una interfaz), lo que permitiría cambiar la implementación de la base de datos sin modificar la clase
+      God.
